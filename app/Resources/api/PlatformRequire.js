@@ -112,7 +112,7 @@ function densityFile(file) {
       return ret_file_name;
     }
   } else if (os === "android") {
-    var d_file_name = file.replace("android//images/", "android//images/%FOLDER%/"),
+    var d_file_name = file.replace("android/images/", "android/images/%FOLDER%/"),
         do_file_name,
         i;
     for (i in density_folders) {
@@ -126,19 +126,11 @@ function densityFile(file) {
   return null;
 }
 exports.file = function(extension) {
-  if (extension === "/" || extension === "//" ) { // Avoid conflicts with Backbone.js
+  if (typeof extension !== "string") {
     return extension;
   }
+  extension = extension.replace(/^\//, '');
   var base = Ti.Filesystem.applicationDataDirectory + "/" + require("/api/TiShadow").currentApp + "/";
-  // In case of double mapping (if required from variable/s)
-  if (extension.indexOf(base) !== -1) {
-    var regex = new RegExp(base, 'g');
-    extension = extension.replace(regex, "/");
-    if (extension.indexOf("/") === 0) {
-      extension = extension.substring(1);
-    }
-  }
-  // Full Path
   var path = base + extension,
       platform_path =  base + (os === "android" ? "android" : "iphone") + "/" + extension;
   var extension_parts = extension.split("/");
@@ -147,16 +139,19 @@ exports.file = function(extension) {
   if (!isPNG) {
     var file = Ti.Filesystem.getFile(platform_path + (needsJS ? ".js" : ""));
     if (file.exists()) {
-      path = platform_path;
+      return platform_path;
     }
   } else { 
     var platform_dense = densityFile(platform_path);
     if (null !== platform_dense) {
-      path = platform_dense;
-      log.debug("Density File: " + path);
+      return platform_dense;
     }
   }
-  return path;
+
+	if (Ti.Filesystem.getFile(path + (needsJS ? ".js" : "")).exists()) {
+		return path;
+	}
+	return extension;
 };
 
 // if a list of files is provided it will selectively clear the cache

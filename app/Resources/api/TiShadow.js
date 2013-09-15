@@ -6,6 +6,7 @@ var assert = require('/api/Assert');
 var Spec = require("/api/Spec");
 var io = require('/lib/socket.io');
 var osname = Ti.Platform.osname;
+var platform = (osname === 'ipad' || osname === 'iphone') ? 'ios' : osname;
 var socket, room;
 
 if (!Ti.App.Properties.hasProperty("tishadow:uuid")) {
@@ -47,20 +48,36 @@ exports.connect = function(o) {
   });
   
   // REPL messages
-  socket.on('message',require('/api/Beach').eval);
-
+  socket.on('message', function(data) {
+    if (data.platform && data.platform !== osname && data.platform !== platform) {
+      return;
+    }
+    require('/api/Beach').eval(data);
+  });
+  
   socket.on('bundle', function(data) {
+    if (data.platform && data.platform !== osname && data.platform !== platform) {
+      return;
+    }
     if(data.locale) {
       require("/api/Localisation").locale = data.locale;
     }
     loadRemoteZip(data.name, (o.proto || "http") + "://" + o.host + ":" + o.port + "/bundle", data, version_property);
   });
 
-  socket.on('clear', function() {
+  socket.on('clear', function(data) {
+    if (data.platform && data.platform !== osname && data.platform !== platform) {
+      return;
+    }
     exports.clearCache();
   });
 
-  socket.on('close', exports.closeApp);
+  socket.on('close', function(data) {
+    if (data.platform && data.platform !== osname && data.platform !== platform) {
+      return;
+    }
+    exports.closeApp();
+  });
 
   socket.on('disconnect', function() {
     if(o.disconnected) {
@@ -82,12 +99,10 @@ exports.disconnect = function() {
   }
 };
 
-
-
-
 var bundle;
 exports.closeApp = function(name) {
   require("/api/UI").closeApp(name || exports.currentApp);
+  require("/api/App").clearAll();
   log.info("Previous bundle closed.");
 };
 exports.launchApp = function(name) {
@@ -208,21 +223,20 @@ function loadRemoteBundle(url) {
   }
 }
 
-var url = '';
-if (Ti.Platform.osname !== "android") {
-  var cmd = Ti.App.getArguments();
+function parseArguments() {
+  cmd = Ti.App.getArguments();
   if ( (typeof cmd == 'object') && cmd.hasOwnProperty('url') ) {
-    url = cmd.url;
-    loadRemoteBundle(url.replace("tishadow", "http"));
-  }
-
-  Ti.App.addEventListener( 'resumed', function(e) {
-    cmd = Ti.App.getArguments();
-    if ( (typeof cmd == 'object') && cmd.hasOwnProperty('url') ) {
-      if ( cmd.url !== url ) {
-        url = cmd.url;
+    if ( cmd.url !== url ) {
+      url = cmd.url;
+      if (url.substring(0, 8) === 'tishadow') {
         loadRemoteBundle(url.replace("tishadow", "http"));
       }
     }
-  });
+  }
+}
+
+var url = '';
+if (osname !== "android") {
+  parseArguments();
+  Ti.App.addEventListener( 'resumed', parseArguments);
 }

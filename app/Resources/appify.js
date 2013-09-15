@@ -3,6 +3,8 @@
  * See the README.
  */
 
+Titanium.App.idleTimerDisabled = true;
+
 var TiShadow = require("/api/TiShadow");
 var Compression = require('ti.compression');
 
@@ -26,5 +28,5 @@ TiShadow.connect({
 });
 
 //Launch the app
-TiShadow.launchApp("{{app_name}}");
+TiShadow.launchApp(path_name);
 

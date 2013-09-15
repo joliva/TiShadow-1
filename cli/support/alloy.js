@@ -1,7 +1,7 @@
 var fs     = require("fs"),
-path   = require("path"),
-logger = require("../../server/logger.js")
-;
+    path   = require("path"),
+    config = require("./config"),
+    logger = require("../../server/logger.js");
 
 exports.mapFiles = function(last_stat) {
   var alloy_list = fs.getList(config.alloy_path,last_stat.mtime);
@@ -77,6 +77,7 @@ exports.mapFiles = function(last_stat) {
       }
 
       file_path = file_path.slice(2);
+      la = file_path.length - 1;
 
       if (file_path[0] === 'assets') {
         file_path.shift();
