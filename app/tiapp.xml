@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?><ti:app xmlns:ti="http://ti.appcelerator.org">
+    <property name="acs-oauth-secret-production" type="string">vJbhHLmfo0V7DZctVx4MFCIKmMxeE6PF</property>
+    <property name="acs-oauth-key-production" type="string">AMeDYRQLQZ4cgk6fvzNQ0MfN0CgTmYz4</property>
+    <property name="acs-api-key-production" type="string">HDqnCu0Y6mLkg7yb9B8avoY5hcF7xljo</property>
+    <property name="acs-oauth-secret-development" type="string">e92BwkDU4Bfex8frNsspCEPbjwZBqbGv</property>
+    <property name="acs-oauth-key-development" type="string">tAeX4NxSpeNY9ocstuEovtg1ClPJZASZ</property>
+    <property name="acs-api-key-development" type="string">v9DSnDWaIaKb8YkZA2S2EU3j5rknBtwW</property>
     <deployment-targets>
         <target device="tizen">false</target>
         <target device="mobileweb">false</target>
@@ -168,12 +174,13 @@
         </manifest>
     </android>
     <modules>
+        <module platform="commonjs">ti.cloud</module>
+        <module platform="android">ti.map</module>
         <module platform="iphone" version="0.1">yy.tidynamicfont</module>
         <module platform="iphone" version="0.3">net.iamyellow.tiws</module>
         <module platform="android" version="0.1">net.iamyellow.tiws</module>
         <module platform="iphone" version="1.0.2">ti.compression</module>
         <module platform="android" version="2.0.3">ti.compression</module>
-        <module platform="android" version="1.0">ti.physicalSizeCategory</module>
-        <module platform="commonjs">ti.cloud</module>
     </modules>
-<property name="ti.deploytype">test</property></ti:app>
+    <property name="ti.deploytype">development</property>
+</ti:app>
