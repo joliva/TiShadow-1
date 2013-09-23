@@ -181,6 +181,8 @@
         <module platform="android" version="0.1">net.iamyellow.tiws</module>
         <module platform="iphone" version="1.0.2">ti.compression</module>
         <module platform="android" version="2.0.3">ti.compression</module>
+        <module platform="iphone">ti.newrelic</module>
+        <module platform="android">ti.newrelic</module>
     </modules>
-    <property name="ti.deploytype">development</property>
+    <property name="ti.deploytype">test</property>
 </ti:app>
