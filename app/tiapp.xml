@@ -1,4 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?><ti:app xmlns:ti="http://ti.appcelerator.org">
+<?xml version="1.0" encoding="UTF-8"?>
+<ti:app xmlns:ti="http://ti.appcelerator.org">
     <property name="acs-oauth-secret-production" type="string">vJbhHLmfo0V7DZctVx4MFCIKmMxeE6PF</property>
     <property name="acs-oauth-key-production" type="string">AMeDYRQLQZ4cgk6fvzNQ0MfN0CgTmYz4</property>
     <property name="acs-api-key-production" type="string">HDqnCu0Y6mLkg7yb9B8avoY5hcF7xljo</property>
@@ -162,10 +163,12 @@
             <uses-permission android:name="android.permission.WRITE_SMS"/>
             <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>
             <uses-feature android:name="android.hardware.camera" android:required="false"/>
-            <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
+            <uses-feature
+                android:name="android.hardware.camera.autofocus" android:required="false"/>
             <uses-feature android:name="android.hardware.location" android:required="false"/>
             <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
-            <uses-feature android:name="android.hardware.location.network" android:required="false"/>
+            <uses-feature
+                android:name="android.hardware.location.network" android:required="false"/>
             <uses-feature android:name="android.hardware.bluetooth" android:required="false"/>
             <uses-feature android:name="android.hardware.microphone" android:required="false"/>
             <uses-feature android:name="android.hardware.wifi" android:required="false"/>
@@ -184,5 +187,5 @@
         <module platform="iphone">ti.newrelic</module>
         <module platform="android">ti.newrelic</module>
     </modules>
-    <property name="ti.deploytype">test</property>
+    <property name="ti.deploytype">development</property>
 </ti:app>
