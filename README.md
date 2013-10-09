@@ -67,6 +67,7 @@ The following options are available:
     -p, --port <port>      server port
     -l, --long-polling     force long polling
     -i, --internal-ip <internal-ip>  internal ip to bind to
+    -s, --screenshot-path <screenshot-path>  path to save screenshot (defaults to /tmp)
     -z, --manage-versions  manage and automatically update bundles
 ```
 
@@ -147,7 +148,6 @@ the following command:
 
 __Some notes and limitations__
 
- * CommonJS modules should be required with their full path.
  * `Ti.include` is partially supported and will work if included with the full path 
     i.e. slash leading.
  * Only files in the Resources directory will be sent to the device
@@ -156,17 +156,12 @@ __Some notes and limitations__
  * Native modules _can_ be supported if built into the TiShadow app
    first. (I.e., add them to the tiapp.xml of the TiShadow app.)
  * Custom fonts will be loaded if placed in the `Resources/fonts`
-   directory.
+   directory for iOS only.
  * If there any errors about a Titanium SDK command not being found, add
    them to the Includes.js files and clean and build the TiShadow app. (I
    will gradually be adding commands.)
  * Any Ti.API logs will be redirected to the server logs and webpage.
 
-
-### Keeping it Clean
-
-**NEW** - TiShadow now automatically cleans up Windows and TabGroups - thanks
-@FokkeZB
 
 Testing / Assertions
 --------------------
@@ -264,7 +259,7 @@ inside the TiShadow app.
 
 ###Spies
 
-**NEW:** You can add **spies** on objects so that you can modify them from
+You can add **spies** on objects so that you can modify them from
 the repl at run time. In your code add the following command:
 `addSpy(name, object)`. This can be included as a comment, eg:
 `//addSpy("mywindow",win)` which will be uncommented when pushed.
@@ -274,6 +269,29 @@ For Alloy, since comments are removed at compile time you can use the
 following [alloy.jmk](https://gist.github.com/dbankier/5648950) to
 automatically inject spies on the `$`object in your controllers, naming
 the spy with the file's name. 
+
+Screenshots
+-----------
+
+You can capture screenshots of all connected devices using the following command: 
+
+```
+  $ tishadow screenshot
+```
+
+The screenshots will be saved in `png` format in the `/tmp` directory or the path
+configured using the `--screenshot-path` flag when starting the server.
+
+###Screencast mode
+
+Instead of saving the screenshots you can stream them to the browser. Use the following command:
+
+```
+  $ tishadow screenshot --screencast 1000 --scale 0.1
+```
+
+In the above example a screenshot is sent every 1000ms and scales the images to 10% of their height/width.
+Go to: `http://localhost:3000/screencast` to view the screencast.
 
 
 Code Snippets Via Webpage

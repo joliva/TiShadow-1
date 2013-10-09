@@ -1,52 +1,16 @@
-var log = require("/api/Log");
-var utils = require("/api/Utils");
-var os = Ti.Platform.osname;
-var tishadow_version = Ti.version.replace(/tishadow_?/,"").replace(/\./g,"");
-var _ = require("/lib/underscore");
+var log = require("/api/Log"),
+    utils = require("/api/Utils"),
+    densityFile = require("/api/DensityAssets"),
+    os = Ti.Platform.osname,
+    _ = require("/lib/underscore"),
+    global_context = this,
+    global_keys,
+    cache={},
+    spys = {};
 
-if (os === "android") {
-  var density_orientation = (Ti.Gesture.orientation === Ti.UI.LANDSCAPE_LEFT) ? "land" : "port",
-      density_folders = (function () {
-
-        var folders = [],
-            ratio = ((Ti.Platform.displayCaps.platformWidth / Ti.Platform.displayCaps.platformHeight) < ((density_orientation === "land") ? (320 / 240) : (240 / 320))) ? "long" : "notlong",
-            logicalDensityFactor = Ti.Platform.displayCaps.logicalDensityFactor,
-            density;
-
-        if (logicalDensityFactor <= 0.75) {
-          density = "ldpi";
-        } else if (logicalDensityFactor <= 1.0) {
-          density = "mdpi";
-        } else if (logicalDensityFactor <= 1.5) {
-          density = "hdpi";
-        } else {
-          density = "xhdpi";
-        }
-
-        folders.push("res-" + ratio + "-%ORIENTATION%-" + density);
-        folders.push("res-%ORIENTATION%-" + density);
-        folders.push("res-" + density);
-
-        if (density === "ldpi") {
-          folders.push("low");
-        } else if (density === "mdpi") {
-          folders.push("medium");
-        } else if (density === "hdpi") {
-          folders.push("high");
-        }
-
-        folders.push("res-mdpi");
-        folders.push("");
-
-        return folders;
-  })();
-
-  Ti.Gesture.addEventListener("orientationchange", function (e) {
-    density_orientation = (e.orientation === Ti.UI.LANDSCAPE_LEFT) ? "land" : "port";
-  });
-}
-
-var cache={};
+/*
+ * require() override
+ */
 function custom_require(file) {
   try {
     log.info("Requiring: " + file);
@@ -80,6 +44,9 @@ exports.require = function(extension) {
   }
 };
 
+/*
+ * Ti.include() override
+ */
 exports.include = function(context) {
   try {
     // Full Path
@@ -87,73 +54,48 @@ exports.include = function(context) {
       var path = exports.file(arguments[i]);
       var ifile = Ti.Filesystem.getFile(path);
       var contents = ifile.read().text;
-      eval.call(context, contents);
+      eval.call(context || global_context, contents);
     }
   } catch(e) {
     log.error(utils.extractExceptionData(e));
   }
 };
 
-function injectSuffix(file, suffix) {
-  var file_parts = file.split(".");
-  var ext = file_parts.pop();
-  return file_parts.join(".") + suffix + "." + ext;
-}
-
-//density files only for png files
-function densityFile(file) {
-  //iOS Retina Check
-  if ((os === "ipad" || os === "iphone")) {
-    if (Ti.Filesystem.getFile(file).exists()) {
-      return file;
-    }
-    var ret_file_name = injectSuffix(file, "@2x");
-    if (Ti.Filesystem.getFile(ret_file_name).exists() && Ti.Platform.displayCaps.density === "high") {
-      return ret_file_name;
-    }
-  } else if (os === "android") {
-    var d_file_name = file.replace("android/images/", "android/images/%FOLDER%/"),
-        do_file_name,
-        i;
-    for (i in density_folders) {
-      do_file_name = d_file_name.replace("%FOLDER%", density_folders[i].replace('%ORIENTATION%', density_orientation));
-      do9_file_name = injectSuffix(do_file_name, '.9');
-      if (Ti.Filesystem.getFile(do_file_name).exists() || Ti.Filesystem.getFile(do9_file_name).exists()) {
-        return do_file_name;
-      }
-    }
-  }
-  return null;
-}
+/*
+ * Asset Redirection
+ */
 exports.file = function(extension) {
   if (typeof extension !== "string") {
     return extension;
   }
   extension = extension.replace(/^\//, '');
-  var base = Ti.Filesystem.applicationDataDirectory + "/" + require("/api/TiShadow").currentApp + "/";
+                                var base = Ti.Filesystem.applicationDataDirectory + "/" + require("/api/TiShadow").currentApp + "/";
   var path = base + extension,
-      platform_path =  base + (os === "android" ? "android" : "iphone") + "/" + extension;
+  platform_path =  base + (os === "android" ? "android" : "iphone") + "/" + extension;
   var extension_parts = extension.split("/");
   var needsJS = extension_parts[extension_parts.length-1].indexOf(".") === -1;
-  var isPNG = extension.toLowerCase().match("\\.png$");
-  if (!isPNG) {
+  var isImage = extension.toLowerCase().match("\\.(png|jpg)$");
+  if (!isImage) {
     var file = Ti.Filesystem.getFile(platform_path + (needsJS ? ".js" : ""));
     if (file.exists()) {
       return platform_path;
     }
   } else { 
-    var platform_dense = densityFile(platform_path);
+    var platform_dense = densityFile.find(platform_path);
     if (null !== platform_dense) {
       return platform_dense;
     }
   }
 
-	if (Ti.Filesystem.getFile(path + (needsJS ? ".js" : "")).exists()) {
-		return path;
-	}
-	return extension;
+  if (Ti.Filesystem.getFile(path + (needsJS ? ".js" : "")).exists()) {
+    return path;
+  }
+  return extension;
 };
 
+/*
+ * clear require and global cache
+ */
 // if a list of files is provided it will selectively clear the cache
 exports.clearCache = function (list) {
   if (_.isArray(list)) {
@@ -166,4 +108,50 @@ exports.clearCache = function (list) {
   } else {
     cache = {};
   }
+  for (var a in global_context) {
+    if (global_context.hasOwnProperty(a) && !_.contains(global_keys, a)) {
+      delete global_context[a];
+    }
+  }
 };
+
+/*
+ * new repl
+ */
+exports.eval = function(message) {
+  try {
+    __log.repl(eval.call(global_context, message.code));
+  } catch (e) {
+    __log.error(require('/api/Utils').extractExceptionData(e));
+  }
+};
+
+exports.addSpy = function(name,spy) {
+  spys[name]=spy;
+};
+
+/*
+ * inject global functions
+ */
+(function(context) {
+  context.__log = require('/api/Log');
+  context.__p = exports;
+  context.__ui = require('/api/UI');
+  context.__app = require('/api/App');
+  context.L = require('/api/Localisation').fetchString;
+  context.assert = require('/api/Assert');
+  context.closeApp =require('/api/TiShadow').closeApp;
+  context.launchApp = require('/api/TiShadow').launchApp;
+  context.clearCache = require('/api/TiShadow').clearCache;
+  context.runSpec = function() {
+    var path_name = require('/api/TiShadow').currentApp.replace(/ /g,"_");
+    require("/api/Spec").run(path_name, false);
+  };
+  context.addSpy = exports.addSpy;
+  context.getSpy = function(name) {
+    return spys[name];
+  };
+  Ti.Shadow = true;
+})(global_context);
+
+global_keys = _.keys(global_context);

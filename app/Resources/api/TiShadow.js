@@ -1,9 +1,7 @@
 var log = require('/api/Log');
 var utils = require('/api/Utils');
 var Compression = require("ti.compression");
-var p = require('/api/PlatformRequire');
 var assert = require('/api/Assert');
-var Spec = require("/api/Spec");
 var io = require('/lib/socket.io');
 var osname = Ti.Platform.osname;
 var platform = (osname === 'ipad' || osname === 'iphone') ? 'ios' : osname;
@@ -52,7 +50,7 @@ exports.connect = function(o) {
     if (data.platform && data.platform !== osname && data.platform !== platform) {
       return;
     }
-    require('/api/Beach').eval(data);
+    require('/api/PlatformRequire').eval(data);
   });
   
   socket.on('bundle', function(data) {
@@ -77,6 +75,22 @@ exports.connect = function(o) {
       return;
     }
     exports.closeApp();
+  });
+
+  socket.on('screenshot', function(data) {
+    if (data.platform && data.platform !== osname && data.platform !== platform) {
+      return;
+    }
+    Ti.Media.takeScreenshot(function(o) {
+      var image = o.media;
+      if (data.scale) {
+        var height = Ti.Platform.displayCaps.platformHeight * data.scale;
+        var width = Ti.Platform.displayCaps.platformWidth * data.scale;
+        image = image.imageAsResized(width, height);
+      }
+      var imgStr = Ti.Utils.base64encode(image).toString();
+      socket.emit("screenshot_taken", {image: imgStr});
+    });
   });
 
   socket.on('disconnect', function() {
@@ -107,6 +121,7 @@ exports.closeApp = function(name) {
 };
 exports.launchApp = function(name) {
   try {
+    var p = require('/api/PlatformRequire');
     exports.closeApp();
     p.clearCache();
     require("/api/Localisation").clear();
@@ -116,7 +131,7 @@ exports.launchApp = function(name) {
     }
     Ti.App.fireEvent("tishadow:refresh_list");
     exports.currentApp = name;
-    bundle = p.require("/app");
+    bundle = p.include(null, "/app.js");
     log.info(exports.currentApp.replace(/_/g," ") + " launched.");
   } catch(e) {
     log.error(utils.extractExceptionData(e));
@@ -193,9 +208,9 @@ function loadRemoteZip(name, url, data, version_property) {
       // Launch
       if (data && data.spec && data.spec.run) {
         exports.currentApp = path_name;
-        Spec.run(path_name, data.spec.junitxml);
+        require("/api/Spec").run(path_name, data.spec.junitxml);
       } else if (data && data.patch && data.patch.run) {
-        p.clearCache(data.patch.files);
+        require('/api/PlatformRequire').clearCache(data.patch.files);
       } else  {
         exports.launchApp(path_name);
       }
